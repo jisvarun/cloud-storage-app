@@ -32,7 +32,7 @@ class CloudStorageController extends Controller
                 });
             })
             ->orderBy($sort, $direction)
-            ->simplePaginate(3)
+            ->paginate(3)
             ->withQueryString();
 
         return view('list-student', compact('students', 'search', 'sort', 'direction'));
