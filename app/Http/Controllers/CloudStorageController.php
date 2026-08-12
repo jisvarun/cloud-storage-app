@@ -8,11 +8,34 @@ use Illuminate\Support\Facades\Http;
 
 class CloudStorageController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $students = Student::orderBy('created_at', 'desc')->get();
+        $search = trim((string) $request->query('search', ''));
+        $sortableColumns = ['full_name', 'email', 'mobile', 'created_at'];
+        $sort = $request->query('sort', 'created_at');
+        $direction = $request->query('direction', 'desc');
 
-        return view('list-student', compact('students'));
+        if (!in_array($sort, $sortableColumns, true)) {
+            $sort = 'created_at';
+        }
+
+        if (!in_array($direction, ['asc', 'desc'], true)) {
+            $direction = 'desc';
+        }
+
+        $students = Student::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('full_name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('mobile', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy($sort, $direction)
+            ->simplePaginate(3)
+            ->withQueryString();
+
+        return view('list-student', compact('students', 'search', 'sort', 'direction'));
     }
 
     public function create()
